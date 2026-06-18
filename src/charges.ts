@@ -1,41 +1,48 @@
 import { Router } from "express";
-import { randomUUID } from "crypto";
+import { ChargeStore } from "./store";
+import { ChargeNotFoundError, InvalidAmountError, AlreadyCapturedError } from "./errors";
+import { inc } from "./metrics";
 
-type Charge = {
-  id: string;
-  amount: number;
-  currency: string;
-  status: "pending" | "captured";
-};
-
-const store = new Map<string, Charge>();
-
+const store = new ChargeStore();
 export const chargesRouter = Router();
 
 chargesRouter.post("/", (req, res) => {
-  const { amount, currency } = req.body ?? {};
-  if (typeof amount !== "number" || amount <= 0) {
-    return res.status(400).json({ error: "amount must be a positive number" });
+  try {
+    const charge = store.create(req.body ?? {});
+    inc("charges_created_total");
+    return res.status(201).json(charge);
+  } catch (err) {
+    if (err instanceof InvalidAmountError) {
+      inc("charges_rejected_total");
+      return res.status(400).json({ error: err.message });
+    }
+    throw err;
   }
-  const charge: Charge = {
-    id: randomUUID(),
-    amount,
-    currency: currency ?? "usd",
-    status: "pending",
-  };
-  store.set(charge.id, charge);
-  return res.status(201).json(charge);
 });
 
 chargesRouter.get("/:id", (req, res) => {
-  const charge = store.get(req.params.id);
-  if (!charge) return res.status(404).json({ error: "not found" });
-  return res.json(charge);
+  try {
+    return res.json(store.get(req.params.id));
+  } catch (err) {
+    if (err instanceof ChargeNotFoundError) {
+      return res.status(404).json({ error: err.message });
+    }
+    throw err;
+  }
 });
 
 chargesRouter.post("/:id/capture", (req, res) => {
-  const charge = store.get(req.params.id);
-  if (!charge) return res.status(404).json({ error: "not found" });
-  charge.status = "captured";
-  return res.json(charge);
+  try {
+    const charge = store.capture(req.params.id);
+    inc("charges_captured_total");
+    return res.json(charge);
+  } catch (err) {
+    if (err instanceof ChargeNotFoundError) {
+      return res.status(404).json({ error: err.message });
+    }
+    if (err instanceof AlreadyCapturedError) {
+      return res.status(409).json({ error: err.message });
+    }
+    throw err;
+  }
 });
