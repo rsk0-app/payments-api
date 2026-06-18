@@ -1,0 +1,19 @@
+replicaCount: 2
+image:
+  repository: ghcr.io/rsk0-app/payments-api
+  tag: "1.2.0"
+  pullPolicy: IfNotPresent
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 3000
+resources:
+  limits:
+    cpu: 500m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+env:
+  NODE_ENV: production
+  LOG_LEVEL: info
