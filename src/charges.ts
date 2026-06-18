@@ -2,11 +2,12 @@ import { Router } from "express";
 import { ChargeStore } from "./store";
 import { ChargeNotFoundError, InvalidAmountError, AlreadyCapturedError } from "./errors";
 import { inc } from "./metrics";
+import { idempotency } from "./idempotency";
 
 const store = new ChargeStore();
 export const chargesRouter = Router();
 
-chargesRouter.post("/", (req, res) => {
+chargesRouter.post("/", idempotency, (req, res) => {
   try {
     const charge = store.create(req.body ?? {});
     inc("charges_created_total");
