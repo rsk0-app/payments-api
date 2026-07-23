@@ -13,19 +13,36 @@ spec:
     metadata:
       labels:
         app: payments-api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.service.targetPort }}"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
         - name: payments-api
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
-            - containerPort: {{ .Values.service.targetPort }}
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
           env:
             - name: NODE_ENV
               value: {{ .Values.env.NODE_ENV | quote }}
+            - name: FAILURE_MODE
+              value: {{ .Values.failure.mode | quote }}
+            - name: ERROR_RATE
+              value: {{ .Values.failure.errorRate | quote }}
+            - name: LATENCY_MS
+              value: {{ .Values.failure.latencyMs | quote }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 5
           livenessProbe:
             httpGet:
               path: /healthz
-              port: {{ .Values.service.targetPort }}
+              port: http
