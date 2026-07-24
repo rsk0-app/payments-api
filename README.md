@@ -21,3 +21,5 @@ npm run dev   # http://localhost:3000
 ## Deploy
 
 Containerised via the root `Dockerfile`; Helm chart under `chart/`.
+
+<!-- stand: benign copy tweak -->
