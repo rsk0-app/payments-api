@@ -17,6 +17,7 @@ resources:
 env:
   NODE_ENV: production
   LOG_LEVEL: info
+  PAYMENTS_TIMEOUT_MS: "250"
 failure:
   mode: ""
   errorRate: "0"
