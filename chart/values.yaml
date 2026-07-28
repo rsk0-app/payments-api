@@ -20,5 +20,5 @@ env:
   PAYMENTS_TIMEOUT_MS: "250"
 failure:
   mode: errors
-  errorRate: "0.45"
-  latencyMs: "1500"
+  errorRate: "0.08"
+  latencyMs: "800"
