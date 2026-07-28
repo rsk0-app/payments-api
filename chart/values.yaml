@@ -18,6 +18,6 @@ env:
   NODE_ENV: production
   LOG_LEVEL: info
 failure:
-  mode: errors
-  errorRate: "0.08"
-  latencyMs: "800"
+  mode: ""
+  errorRate: "0"
+  latencyMs: "0"
