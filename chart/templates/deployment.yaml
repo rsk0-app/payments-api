@@ -25,8 +25,6 @@ spec:
           ports:
             - name: http
               containerPort: {{ .Values.service.targetPort }}
-          resources:
-{{ toYaml .Values.resources | indent 12 }}
           env:
             - name: NODE_ENV
               value: {{ .Values.env.NODE_ENV | quote }}
@@ -38,3 +36,23 @@ spec:
               value: {{ .Values.failure.errorRate | quote }}
             - name: LATENCY_MS
               value: {{ .Values.failure.latencyMs | quote }}
+          # Liveness stays SHALLOW (/healthz): the process being up == alive, so
+          # a transient DB blip must not get the pod killed. Readiness is DEEP
+          # (/readyz): payments-api is the LEAF of the chain, so /readyz runs a
+          # real DB SELECT 1 (R2) — a broken DB flips this pod NotReady and the
+          # upstream /readyz deep-checks cascade the outage all the way up.
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+          resources:
+{{ toYaml .Values.resources | indent 12 }}

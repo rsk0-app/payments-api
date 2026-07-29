@@ -1,4 +1,4 @@
-replicaCount: 1
+replicaCount: 2
 image:
   repository: ghcr.io/rsk0-app/payments-api
   tag: canary
@@ -8,16 +8,18 @@ service:
   port: 80
   targetPort: 3000
 resources:
-  limits: {}
   requests:
     cpu: 100m
     memory: 128Mi
+  limits:
+    cpu: 250m
+    memory: 256Mi
 env:
   NODE_ENV: production
   LOG_LEVEL: info
   PAYMENTS_TIMEOUT_MS: "250"
 database:
-  url: postgres://stand:standpass@postgres.rsk0-apps.svc.cluster.local:5432/stand
+  url: "postgres://stand:standpass@postgres.rsk0-apps.svc.cluster.local:5432/stand"
 failure:
   mode: ""
   errorRate: "0"
