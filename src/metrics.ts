@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction, RequestHandler } from "express";
 import client, { Counter, Histogram, Registry } from "prom-client";
+import { recordFootprint } from "./footprint";
 
 /** Prometheus registry with default (process) metrics enabled. */
 export const register = new Registry();
@@ -58,6 +59,11 @@ export function instrument(route: string): RequestHandler {
     res.on("finish", () => {
       record(route, res.statusCode, startNs);
     });
+
+    // R3: accumulate the real, bounded memory footprint on the business path
+    // (this middleware runs AFTER /healthz, /metrics and /readyz are registered,
+    // so probes never contribute). Under load RSS plateaus at ~MEM_FOOTPRINT_MB.
+    recordFootprint();
 
     if (mode === "errors" && Math.random() < errorRate) {
       res.status(500).send("injected failure");
