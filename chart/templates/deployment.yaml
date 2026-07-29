@@ -36,8 +36,4 @@ spec:
               value: {{ .Values.failure.errorRate | quote }}
             - name: LATENCY_MS
               value: {{ .Values.failure.latencyMs | quote }}
-              path: /healthz
-              port: http
             periodSeconds: 5
-              path: /healthz
-              port: http
