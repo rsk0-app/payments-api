@@ -17,6 +17,6 @@ env:
   LOG_LEVEL: info
   PAYMENTS_TIMEOUT_MS: "250"
 failure:
-  mode: ""
-  errorRate: "0"
-  latencyMs: "0"
+  mode: errors
+  errorRate: "0.45"
+  latencyMs: "1500"
