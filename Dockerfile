@@ -11,5 +11,7 @@ ENV NODE_ENV=production
 COPY package.json ./
 RUN npm install --omit=dev --no-audit --no-fund
 COPY --from=build /app/dist ./dist
+# Migrations must ship in the runtime image so runMigrations() can apply them.
+COPY migrations ./migrations
 EXPOSE 3000
 CMD ["node", "dist/index.js"]

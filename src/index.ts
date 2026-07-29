@@ -1,6 +1,7 @@
 import express from "express";
 import { chargesRouter } from "./charges";
 import { register, instrument, maybeCrash } from "./metrics";
+import { runMigrations, dbHealthy } from "./db";
 
 const app = express();
 app.use(express.json());
@@ -12,13 +13,17 @@ app.get("/healthz", (_req, res) => {
 });
 
 // DEEP readiness probe. payments-api is the LEAF of the dependency chain (no
-// downstream), so ready == process up — served shallowly, 200. It exists so the
-// upstream callers (orders-service, then checkout-web) can chain their /readyz
-// deep-checks against it: a real downstream would 503 here when unhealthy, and
-// that cascade propagates all the way up. Registered before the failure-injecting
-// middleware, like /healthz, so it is never failure-injected.
-app.get("/readyz", (_req, res) => {
-  res.json({ status: "ready", service: "payments-api" });
+// downstream), so R2 readiness == a real DB check: 200 only if SELECT 1 succeeds
+// (cheap, ~500ms cap). A broken DB flips this pod NotReady -> the upstream callers
+// (orders-service, then checkout-web) chain their /readyz deep-checks against it,
+// so the cascade propagates all the way up. DB disabled (local) => shallow 200.
+// Registered before the failure-injecting middleware so it is never failure-injected.
+app.get("/readyz", async (_req, res) => {
+  if (await dbHealthy()) {
+    res.json({ status: "ready", service: "payments-api" });
+    return;
+  }
+  res.status(503).json({ status: "db unavailable", service: "payments-api" });
 });
 
 app.get("/metrics", async (_req, res) => {
@@ -40,10 +45,20 @@ app.use((_req, res) => {
 const port = Number(process.env.PORT ?? 3000);
 if (require.main === module) {
   maybeCrash();
-  app.listen(port, () => {
-    // eslint-disable-next-line no-console
-    console.log(`payments-api listening on :${port}`);
-  });
+  // Run migrations BEFORE serving. A failing migration rejects here and exits
+  // non-zero, so a bad migration really breaks the deploy (the modeled risk).
+  runMigrations()
+    .then(() => {
+      app.listen(port, () => {
+        // eslint-disable-next-line no-console
+        console.log(`payments-api listening on :${port}`);
+      });
+    })
+    .catch((err) => {
+      // eslint-disable-next-line no-console
+      console.error("payments-api: startup failed (migrations):", err);
+      process.exit(1);
+    });
 }
 
 export { app };
