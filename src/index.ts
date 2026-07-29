@@ -11,6 +11,16 @@ app.get("/healthz", (_req, res) => {
   res.json({ status: "ok", service: "payments-api" });
 });
 
+// DEEP readiness probe. payments-api is the LEAF of the dependency chain (no
+// downstream), so ready == process up — served shallowly, 200. It exists so the
+// upstream callers (orders-service, then checkout-web) can chain their /readyz
+// deep-checks against it: a real downstream would 503 here when unhealthy, and
+// that cascade propagates all the way up. Registered before the failure-injecting
+// middleware, like /healthz, so it is never failure-injected.
+app.get("/readyz", (_req, res) => {
+  res.json({ status: "ready", service: "payments-api" });
+});
+
 app.get("/metrics", async (_req, res) => {
   res.set("Content-Type", register.contentType);
   res.send(await register.metrics());
