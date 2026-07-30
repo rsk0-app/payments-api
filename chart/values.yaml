@@ -1,7 +1,7 @@
 replicaCount: 2
 image:
   repository: ghcr.io/rsk0-app/payments-api
-  tag: d87ae295e924dd34d213dd3dbf7a3c41a1fd4e8f
+  tag: c9ca007aa2629d8b29393dc788f1819656ce6dc3
   pullPolicy: Always
 service:
   type: ClusterIP
