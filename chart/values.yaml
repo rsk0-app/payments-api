@@ -1,7 +1,7 @@
 replicaCount: 2
 image:
   repository: ghcr.io/rsk0-app/payments-api
-  tag: f0cdf607b927c9f97324acabd4d5b2af1b7d1a24
+  tag: canary
   pullPolicy: Always
 service:
   type: ClusterIP
@@ -12,16 +12,11 @@ resources:
     cpu: 100m
     memory: 128Mi
   limits:
-    cpu: 250m
     memory: 256Mi
 env:
   NODE_ENV: production
   LOG_LEVEL: info
   PAYMENTS_TIMEOUT_MS: "250"
-  # R3: real load-driven memory footprint (MiB). Under loadgen the RSS plateaus
-  # at ~this value; the baseline limits.memory (256Mi) sits comfortably above
-  # footprint+runtime, so it is healthy at baseline but OOMKilled if a risky
-  # change lowers limits.memory below the footprint (set_low_memory_limit -> 128Mi).
   MEM_FOOTPRINT_MB: "150"
 database:
   url: postgres://stand:standpass@postgres.rsk0-apps.svc.cluster.local:5432/stand
