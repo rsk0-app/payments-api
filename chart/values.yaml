@@ -1,7 +1,7 @@
 replicaCount: 2
 image:
   repository: ghcr.io/rsk0-app/payments-api
-  tag: 8ff8b6c9682bbda1ffb70c9a14ca9aab304ff4ed
+  tag: canary
   pullPolicy: Always
 service:
   type: ClusterIP
@@ -13,7 +13,7 @@ resources:
     memory: 128Mi
   limits:
     cpu: 250m
-    memory: 128Mi
+    memory: 256Mi
 env:
   NODE_ENV: production
   LOG_LEVEL: info
