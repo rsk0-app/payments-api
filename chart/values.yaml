@@ -1,7 +1,7 @@
 replicaCount: 2
 image:
   repository: ghcr.io/rsk0-app/payments-api
-  tag: canary
+  tag: 421de4dd095950b00dcfb0634938e3f2bb84ddc6
   pullPolicy: Always
 service:
   type: ClusterIP
