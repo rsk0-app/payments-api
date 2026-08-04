@@ -1,4 +1,4 @@
-replicaCount: 2
+replicaCount: 1
 image:
   repository: ghcr.io/rsk0-app/payments-api
   tag: c8a3f37c1f611d9585bcd5d218c5016a8d6de3df
