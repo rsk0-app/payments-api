@@ -49,12 +49,5 @@ spec:
               port: http
             initialDelaySeconds: 5
             periodSeconds: 10
-          readinessProbe:
-            httpGet:
-              path: /readyz
-              port: http
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            timeoutSeconds: 2
           resources:
 {{ toYaml .Values.resources | indent 12 }}
