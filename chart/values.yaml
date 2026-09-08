@@ -13,7 +13,7 @@ resources:
     memory: 128Mi
   limits:
     cpu: 250m
-    memory: 256Mi
+    memory: 128Mi
 env:
   NODE_ENV: production
   LOG_LEVEL: info
