@@ -1,4 +1,4 @@
-replicaCount: 2
+replicaCount: 1
 image:
   repository: ghcr.io/rsk0-app/payments-api
   tag: ddb89313a595b6c9b479c231e02396fb9350f4a8
@@ -12,6 +12,7 @@ resources:
     cpu: 100m
     memory: 128Mi
   limits:
+    cpu: 250m
     memory: 256Mi
 env:
   NODE_ENV: production
