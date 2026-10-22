@@ -1,6 +1,8 @@
 import type { Request, Response, NextFunction, RequestHandler } from "express";
 import client, { Counter, Histogram, Registry } from "prom-client";
 import { recordFootprint } from "./footprint";
+import { context } from "@opentelemetry/api";
+import { logServerError } from "./otel";
 
 /** Prometheus registry with default (process) metrics enabled. */
 export const register = new Registry();
@@ -56,8 +58,10 @@ export function instrument(route: string): RequestHandler {
     const errorRate = Number(process.env.ERROR_RATE ?? "0.5");
     const latencyMs = Number(process.env.LATENCY_MS ?? "1500");
 
+    const ctx = context.active();
     res.on("finish", () => {
       record(route, res.statusCode, startNs);
+      logServerError(ctx, route, res.statusCode);
     });
 
     // R3: accumulate the real, bounded memory footprint on the business path
