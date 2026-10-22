@@ -22,6 +22,6 @@ env:
 database:
   url: postgres://stand:standpass@postgres.rsk0-apps.svc.cluster.local:5432/stand
 failure:
-  mode: ""
-  errorRate: "0"
+  mode: "errors"
+  errorRate: "0.3"
   latencyMs: "0"
