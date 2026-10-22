@@ -1,8 +1,9 @@
 name: ci
-on:
+'on':
   push:
-    branches: [main]
-  pull_request:
+    branches:
+      - main
+  pull_request: null
 permissions:
   contents: write
   packages: write
@@ -13,14 +14,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: '20'
       - name: Install
         run: npm install --no-audit --no-fund
       - name: Build
         run: npm run build
       - name: Test
         run: node --test test/
-
   image:
     needs: build-test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -43,50 +43,18 @@ jobs:
             ghcr.io/rsk0-app/payments-api:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
       - name: Pin chart image.tag to this commit
-        # GitOps (ArgoCD) deploys .Values.image.tag. Bump it to the immutable
-        # :${sha} we just built+pushed so the cluster gets THIS commit's image,
-        # never a stale mutable :canary. Commit carries [skip ci] so this push
-        # does not retrigger the workflow (no loop). Race-safe against the
-        # stand generator: re-sync onto latest main and re-apply the bump.
-        env:
-          SHA: ${{ github.sha }}
-        run: |
-          set -u
-          git config user.name "rsk0-ci"
-          git config user.email "ci@rsk0.app"
-
-          bump_tag() {
-            if command -v yq >/dev/null 2>&1; then
-              SHA="$SHA" yq -i '.image.tag = strenv(SHA)' chart/values.yaml
-            else
-              # Scoped rewrite: only the `tag:` line INSIDE the top-level
-              # `image:` block (inimg resets on any other column-0 key).
-              awk -v sha="$SHA" '
-                /^[^[:space:]#]/ { inimg = ($0 ~ /^image:/) }
-                inimg && /^[[:space:]]+tag:[[:space:]]/ { sub(/tag:[[:space:]].*/, "tag: " sha) }
-                { print }
-              ' chart/values.yaml > chart/values.yaml.tmp && mv chart/values.yaml.tmp chart/values.yaml
-            fi
-          }
-
-          for attempt in 1 2 3; do
-            git fetch origin main || true
-            git reset --hard origin/main
-            bump_tag
-            if git diff --quiet -- chart/values.yaml; then
-              echo "image.tag already $SHA — nothing to bump"
-              exit 0
-            fi
-            git add chart/values.yaml
-            git commit -m "ci: pin chart image.tag to $SHA [skip ci]"
-            if git push origin HEAD:main; then
-              echo "Pushed image.tag bump -> $SHA"
-              exit 0
-            fi
-            echo "push rejected (attempt $attempt/3) — re-syncing and retrying"
-            sleep $((attempt * 2))
-          done
-          echo "WARN: could not push image.tag bump after 3 attempts; leaving main as-is"
-          exit 0
+        id: rsk0_pin
+        run: node scripts/rsk0-pin-chart.mjs
+      - name: Upload chart commit receipt
+        if: steps.rsk0_pin.outputs.receipt_created == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rsk0-chart-commit-${{ github.run_attempt }}
+          path: chart-commit.json
+          if-no-files-found: error
+          overwrite: false
+          retention-days: 30
