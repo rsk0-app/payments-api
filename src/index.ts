@@ -1,7 +1,9 @@
+import "./otel-register";
 import express from "express";
 import { chargesRouter } from "./charges";
 import { register, instrument, maybeCrash } from "./metrics";
 import { runMigrations, dbHealthy } from "./db";
+import { shutdownTelemetry } from "./otel";
 
 const app = express();
 app.use(express.json());
@@ -49,9 +51,13 @@ if (require.main === module) {
   // non-zero, so a bad migration really breaks the deploy (the modeled risk).
   runMigrations()
     .then(() => {
-      app.listen(port, () => {
+      const server = app.listen(port, () => {
         // eslint-disable-next-line no-console
         console.log(`payments-api listening on :${port}`);
+      });
+      process.once("SIGTERM", () => {
+        server.close();
+        void shutdownTelemetry().finally(() => process.exit(0));
       });
     })
     .catch((err) => {
