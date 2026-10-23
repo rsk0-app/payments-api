@@ -1,4 +1,3 @@
-# stand proof 2026-10-23 window-overlap (harmless comment; reverted after proof)
 replicaCount: 2
 image:
   repository: ghcr.io/rsk0-app/payments-api
